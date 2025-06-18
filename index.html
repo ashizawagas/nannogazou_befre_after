@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>何の画像でしょう？Before After</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #e3f2fd, #f3e5f5);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            max-width: 900px;
+            width: 100%;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            padding: 30px;
+            text-align: center;
+        }
+
+        h1 {
+            color: #2e7d32;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+
+        .setup-screen, .quiz-screen {
+            display: none;
+        }
+
+        .setup-screen.active, .quiz-screen.active {
+            display: block;
+        }
+
+        .upload-section {
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            border: 2px dashed #6c757d;
+        }
+
+        .upload-controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            margin: 15px 0;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+        }
+
+        .file-input {
+            position: absolute;
+            left: -9999px;
+        }
+
+        .file-input-label {
+            padding: 10px 20px;
+            background: linear-gradient(45deg, #6c757d, #495057);
+            color: white;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+            display: block;
+            text-align: center;
+        }
+
+        .file-input-label:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .input-field {
+            padding: 10px 15px;
+            border: 2px solid #dee2e6;
+            border-radius: 20px;
+            font-size: 16px;
+            outline: none;
+            transition: border-color 0.3s ease;
+            width: 200px;
+        }
+
+        .input-field:focus {
+            border-color: #4caf50;
+        }
+
+        .trivia-input {
+            width: 300px;
+            height: 80px;
+            resize: vertical;
+            border-radius: 10px;
+        }
+
+        .add-btn, .start-quiz-btn {
+            padding: 12px 24px;
+            background: linear-gradient(45deg, #28a745, #20c997);
+            color: white;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            font-size: 16px;
+        }
+
+        .add-btn:hover, .start-quiz-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .add-btn:disabled, .start-quiz-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .preview-images {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin: 15px 0;
+        }
+
+        .preview-img {
+            width: 120px;
+            height: 90px;
+            object-fit: cover;
+            border-radius: 8px;
+            border: 2px solid #dee2e6;
+        }
+
+        .questions-list {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: left;
+        }
+
+        .question-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            margin: 10px 0;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .question-info {
+            font-weight: bold;
+            color: #2e7d32;
+        }
+
+        .delete-question-btn {
+            padding: 5px 10px;
+            background: linear-gradient(45deg, #dc3545, #c82333);
+            color: white;
+            border: none;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .image-container {
+            position: relative;
+            width: 400px;
+            height: 300px;
+            margin: 20px auto;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .quiz-image {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: opacity 0.3s ease;
+        }
+
+        .controls {
+            margin: 30px 0;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 12px 24px;
+            font-size: 16px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+        }
+
+        .start-btn {
+            background: linear-gradient(45deg, #4caf50, #8bc34a);
+            color: white;
+        }
+
+        .stop-btn {
+            background: linear-gradient(45deg, #f44336, #ff5722);
+            color: white;
+        }
+
+        .next-btn {
+            background: linear-gradient(45deg, #2196f3, #03a9f4);
+            color: white;
+        }
+
+        .prev-btn {
+            background: linear-gradient(45deg, #ff9800, #ffc107);
+            color: white;
+        }
+
+        .back-btn {
+            background: linear-gradient(45deg, #6c757d, #495057);
+            color: white;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .speed-control {
+            margin: 20px 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .speed-slider {
+            width: 200px;
+            height: 6px;
+            border-radius: 3px;
+            background: #ddd;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .speed-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #4caf50;
+            cursor: pointer;
+        }
+
+        .trivia {
+            background: linear-gradient(135deg, #fff3e0, #f3e5f5);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            border-left: 5px solid #ff9800;
+            display: none;
+            text-align: left;
+        }
+
+        .trivia h3 {
+            color: #e65100;
+            margin-top: 0;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4caf50, #8bc34a);
+            width: 0%;
+            transition: width 0.3s ease;
+            border-radius: 4px;
+        }
+
+        .quiz-info {
+            display: flex;
+            justify-content: center;
+            margin: 15px 0;
+            font-size: 18px;
+            font-weight: bold;
+            color: #2e7d32;
+            gap: 10px;
+        }
+
+        #answerName {
+            display: none;
+        }
+
+        .no-questions {
+            color: #6c757d;
+            font-style: italic;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🤔 何の画像でしょう？Before After 🤔</h1>
+        
+        <!-- 問題作成画面 -->
+        <div class="setup-screen active">
+            <div class="upload-section">
+                <h3>新しい問題を追加</h3>
+                <div class="upload-controls">
+                    <div class="input-group">
+                        <div class="file-input-wrapper">
+                            <input type="file" id="beforeImageFile" class="file-input" accept="image/*">
+                            <label for="beforeImageFile" class="file-input-label">📷 最初の画像</label>
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <div class="file-input-wrapper">
+                            <input type="file" id="afterImageFile" class="file-input" accept="image/*">
+                            <label for="afterImageFile" class="file-input-label">📷 終わりの画像</label>
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <input type="text" id="answerNameInput" class="input-field" placeholder="答えの名前">
+                        <textarea id="triviaInput" class="input-field trivia-input" placeholder="豆知識（省略可能）"></textarea>
+                        <button id="addQuestionBtn" class="add-btn" disabled>➕ 問題追加</button>
+                    </div>
+                </div>
+                <div class="preview-images">
+                    <img id="beforePreview" class="preview-img" style="display: none;" alt="最初の画像プレビュー">
+                    <img id="afterPreview" class="preview-img" style="display: none;" alt="終わりの画像プレビュー">
+                </div>
+            </div>
+
+            <div class="questions-list">
+                <h3>登録済みの問題</h3>
+                <div id="questionsList"></div>
+                <div id="noQuestionsMessage" class="no-questions">
+                    まだ問題が登録されていません。上記のフォームから問題を追加してください。
+                </div>
+            </div>
+
+            <button id="startQuizBtn" class="start-quiz-btn" disabled>🎯 クイズ開始</button>
+        </div>
+
+        <!-- クイズ画面 -->
+        <div class="quiz-screen">
+            <div class="quiz-info">
+                <span id="answerName">答え</span>
+                <span id="questionCounter">1 / 1</span>
+            </div>
+
+            <div class="image-container">
+                <img id="beforeImage" class="quiz-image" src="" alt="最初の画像" style="opacity: 1;">
+                <img id="afterImage" class="quiz-image" src="" alt="終わりの画像" style="opacity: 0;">
+            </div>
+
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+
+            <div class="speed-control">
+                <label for="speedSlider">変化速度:</label>
+                <input type="range" id="speedSlider" class="speed-slider" min="1" max="20" value="10">
+                <span id="speedValue">10</span>
+            </div>
+
+            <div class="controls">
+                <button id="startBtn" class="start-btn">🎬 スタート</button>
+                <button id="stopBtn" class="stop-btn" disabled>⏹️ ストップ</button>
+                <button id="prevBtn" class="prev-btn">⬅️ 前へ</button>
+                <button id="nextBtn" class="next-btn">➡️ 次へ</button>
+                <button id="backToSetupBtn" class="back-btn">🔙 問題作成に戻る</button>
+            </div>
+
+            <div id="trivia" class="trivia">
+                <h3>🌟 豆知識</h3>
+                <p id="triviaText"></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class BeforeAfterQuiz {
+            constructor() {
+                this.currentQuestionIndex = 0;
+                this.animationId = null;
+                this.isAnimating = false;
+                this.progress = 0;
+                this.speed = 10;
+                this.questions = [];
+                this.currentScreen = 'setup'; // 'setup' or 'quiz'
+                
+                this.initializeElements();
+                this.bindEvents();
+                this.updateUI();
+            }
+            
+            initializeElements() {
+                // Setup screen elements
+                this.setupScreen = document.querySelector('.setup-screen');
+                this.quizScreen = document.querySelector('.quiz-screen');
+                this.beforeImageFile = document.getElementById('beforeImageFile');
+                this.afterImageFile = document.getElementById('afterImageFile');
+                this.answerNameInput = document.getElementById('answerNameInput');
+                this.triviaInput = document.getElementById('triviaInput');
+                this.addQuestionBtn = document.getElementById('addQuestionBtn');
+                this.beforePreview = document.getElementById('beforePreview');
+                this.afterPreview = document.getElementById('afterPreview');
+                this.questionsList = document.getElementById('questionsList');
+                this.noQuestionsMessage = document.getElementById('noQuestionsMessage');
+                this.startQuizBtn = document.getElementById('startQuizBtn');
+                
+                // Quiz screen elements
+                this.beforeImage = document.getElementById('beforeImage');
+                this.afterImage = document.getElementById('afterImage');
+                this.startBtn = document.getElementById('startBtn');
+                this.stopBtn = document.getElementById('stopBtn');
+                this.nextBtn = document.getElementById('nextBtn');
+                this.prevBtn = document.getElementById('prevBtn');
+                this.backToSetupBtn = document.getElementById('backToSetupBtn');
+                this.speedSlider = document.getElementById('speedSlider');
+                this.speedValue = document.getElementById('speedValue');
+                this.trivia = document.getElementById('trivia');
+                this.triviaText = document.getElementById('triviaText');
+                this.progressFill = document.getElementById('progressFill');
+                this.answerName = document.getElementById('answerName');
+                this.questionCounter = document.getElementById('questionCounter');
+            }
+            
+            bindEvents() {
+                // Setup screen events
+                this.beforeImageFile.addEventListener('change', (e) => this.handleImagePreview(e, this.beforePreview));
+                this.afterImageFile.addEventListener('change', (e) => this.handleImagePreview(e, this.afterPreview));
+                this.answerNameInput.addEventListener('input', () => this.checkAddButtonState());
+                this.addQuestionBtn.addEventListener('click', () => this.addQuestion());
+                this.startQuizBtn.addEventListener('click', () => this.switchToQuizScreen());
+                
+                // Quiz screen events
+                this.startBtn.addEventListener('click', () => this.startAnimation());
+                this.stopBtn.addEventListener('click', () => this.stopAnimation());
+                this.nextBtn.addEventListener('click', () => this.nextQuestion());
+                this.prevBtn.addEventListener('click', () => this.prevQuestion());
+                this.backToSetupBtn.addEventListener('click', () => this.switchToSetupScreen());
+                this.speedSlider.addEventListener('input', (e) => {
+                    this.speed = parseInt(e.target.value);
+                    this.speedValue.textContent = this.speed;
+                });
+            }
+            
+            handleImagePreview(event, previewElement) {
+                const file = event.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        previewElement.src = e.target.result;
+                        previewElement.style.display = 'block';
+                        this.checkAddButtonState();
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    previewElement.style.display = 'none';
+                    this.checkAddButtonState();
+                }
+            }
+            
+            checkAddButtonState() {
+                const hasBeforeImage = this.beforeImageFile.files.length > 0;
+                const hasAfterImage = this.afterImageFile.files.length > 0;
+                const hasName = this.answerNameInput.value.trim().length > 0;
+                
+                this.addQuestionBtn.disabled = !(hasBeforeImage && hasAfterImage && hasName);
+            }
+            
+            addQuestion() {
+                const beforeFile = this.beforeImageFile.files[0];
+                const afterFile = this.afterImageFile.files[0];
+                const name = this.answerNameInput.value.trim();
+                const trivia = this.triviaInput.value.trim() || `${name}についての詳しい情報はまだ登録されていません。`;
+                
+                if (!beforeFile || !afterFile || !name) return;
+                
+                const beforeReader = new FileReader();
+                const afterReader = new FileReader();
+                
+                beforeReader.onload = (e) => {
+                    const beforeImage = e.target.result;
+                    
+                    afterReader.onload = (e) => {
+                        const afterImage = e.target.result;
+                        
+                        const newQuestion = {
+                            name: name,
+                            beforeImage: beforeImage,
+                            afterImage: afterImage,
+                            trivia: trivia
+                        };
+                        
+                        this.questions.push(newQuestion);
+                        
+                        // Reset form
+                        this.beforeImageFile.value = '';
+                        this.afterImageFile.value = '';
+                        this.answerNameInput.value = '';
+                        this.triviaInput.value = '';
+                        this.beforePreview.style.display = 'none';
+                        this.afterPreview.style.display = 'none';
+                        this.addQuestionBtn.disabled = true;
+                        
+                        this.updateQuestionsList();
+                        this.updateUI();
+                    };
+                    
+                    afterReader.readAsDataURL(afterFile);
+                };
+                
+                beforeReader.readAsDataURL(beforeFile);
+            }
+            
+            updateQuestionsList() {
+                this.questionsList.innerHTML = '';
+                
+                this.questions.forEach((question, index) => {
+                    const questionItem = document.createElement('div');
+                    questionItem.className = 'question-item';
+                    
+                    questionItem.innerHTML = `
+                        <div class="question-info">${index + 1}. ${question.name}</div>
+                        <button class="delete-question-btn" onclick="quiz.deleteQuestion(${index})">削除</button>
+                    `;
+                    
+                    this.questionsList.appendChild(questionItem);
+                });
+                
+                this.noQuestionsMessage.style.display = this.questions.length === 0 ? 'block' : 'none';
+            }
+            
+            deleteQuestion(index) {
+                if (confirm(`「${this.questions[index].name}」を削除しますか？`)) {
+                    this.questions.splice(index, 1);
+                    
+                    if (this.currentQuestionIndex >= this.questions.length && this.questions.length > 0) {
+                        this.currentQuestionIndex = this.questions.length - 1;
+                    }
+                    
+                    this.updateQuestionsList();
+                    this.updateUI();
+                    
+                    if (this.currentScreen === 'quiz') {
+                        this.loadCurrentQuestion();
+                    }
+                }
+            }
+            
+            updateUI() {
+                const hasQuestions = this.questions.length > 0;
+                this.startQuizBtn.disabled = !hasQuestions;
+                
+                if (this.currentScreen === 'quiz') {
+                    this.nextBtn.disabled = !hasQuestions || this.questions.length <= 1;
+                    this.prevBtn.disabled = !hasQuestions || this.questions.length <= 1;
+                    
+                    if (hasQuestions) {
+                        this.questionCounter.textContent = `${this.currentQuestionIndex + 1} / ${this.questions.length}`;
+                    } else {
+                        this.questionCounter.textContent = '0 / 0';
+                        this.answerName.textContent = '問題なし';
+                    }
+                }
+            }
+            
+            switchToQuizScreen() {
+                if (this.questions.length === 0) return;
+                
+                this.currentScreen = 'quiz';
+                this.setupScreen.classList.remove('active');
+                this.quizScreen.classList.add('active');
+                this.currentQuestionIndex = 0;
+                this.loadCurrentQuestion();
+                this.updateUI();
+            }
+            
+            switchToSetupScreen() {
+                this.currentScreen = 'setup';
+                this.quizScreen.classList.remove('active');
+                this.setupScreen.classList.add('active');
+                this.stopAnimation();
+            }
+            
+            loadCurrentQuestion() {
+                if (this.questions.length === 0) {
+                    this.beforeImage.src = '';
+                    this.afterImage.src = '';
+                    this.triviaText.textContent = '';
+                    return;
+                }
+                
+                const question = this.questions[this.currentQuestionIndex];
+                this.beforeImage.src = question.beforeImage;
+                this.afterImage.src = question.afterImage;
+                this.answerName.textContent = question.name;
+                this.triviaText.textContent = question.trivia;
+                
+                // Reset animation state
+                this.progress = 0;
+                this.beforeImage.style.opacity = '1';
+                this.afterImage.style.opacity = '0';
+                this.progressFill.style.width = '0%';
+                this.trivia.style.display = 'none';
+                this.answerName.style.display = 'none';
+            }
+            
+            startAnimation() {
+                if (this.isAnimating || this.questions.length === 0) return;
+                
+                this.isAnimating = true;
+                this.startBtn.disabled = true;
+                this.stopBtn.disabled = false;
+                this.nextBtn.disabled = true;
+                this.prevBtn.disabled = true;
+                this.trivia.style.display = 'none';
+                this.answerName.style.display = 'none';
+                
+                this.animate();
+            }
+            
+            stopAnimation() {
+                this.isAnimating = false;
+                this.startBtn.disabled = false;
+                this.stopBtn.disabled = true;
+                this.updateUI();
+                
+                if (this.animationId) {
+                    cancelAnimationFrame(this.animationId);
+                }
+            }
+            
+            animate() {
+                if (!this.isAnimating) return;
+                
+                const increment = this.speed * 0.05;
+                this.progress += increment;
+                
+                if (this.progress >= 100) {
+                    this.progress = 100;
+                    this.completeAnimation();
+                    return;
+                }
+                
+                const beforeOpacity = 1 - (this.progress / 100);
+                const afterOpacity = this.progress / 100;
+                
+                this.beforeImage.style.opacity = beforeOpacity;
+                this.afterImage.style.opacity = afterOpacity;
+                this.progressFill.style.width = `${this.progress}%`;
+                
+                this.animationId = requestAnimationFrame(() => this.animate());
+            }
+            
+            completeAnimation() {
+                this.isAnimating = false;
+                this.startBtn.disabled = false;
+                this.stopBtn.disabled = true;
+                this.updateUI();
+                
+                this.trivia.style.display = 'block';
+                this.answerName.style.display = 'inline';
+                this.trivia.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+            
+            nextQuestion() {
+                if (this.questions.length === 0) return;
+                this.currentQuestionIndex = (this.currentQuestionIndex + 1) % this.questions.length;
+                this.updateUI();
+                this.loadCurrentQuestion();
+            }
+            
+            prevQuestion() {
+                if (this.questions.length === 0) return;
+                this.currentQuestionIndex = (this.currentQuestionIndex - 1 + this.questions.length) % this.questions.length;
+                this.updateUI();
+                this.loadCurrentQuestion();
+            }
+        }
+        
+        let quiz;
+        document.addEventListener('DOMContentLoaded', () => {
+            quiz = new BeforeAfterQuiz();
+        });
+    </script>
+</body>
+</html>
